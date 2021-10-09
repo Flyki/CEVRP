@@ -8,9 +8,6 @@
 #include <list>
 #include <sstream>
 #include "case.h"
-#include "struct.h"
-#include "ant.h"
-
 using namespace std;
 
 #define INFEASIBLE 1000000000
