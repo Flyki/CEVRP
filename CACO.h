@@ -18,7 +18,7 @@ using namespace std;
 class CACO {
 public:
     //for representation 1 represents order-split, 2 represents direct with local search
-    CACO(Case* instance, int seed, int isCan, int isRA, int representation, int timer, double afr);
+    CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr);
     ~CACO();
     void run();
     //traditional representations
@@ -75,5 +75,5 @@ public:
     long int usedFes;
     long int refined;
     long int repaired;
-    int timerate;
+    double timerate;
 };

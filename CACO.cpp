@@ -1,6 +1,8 @@
 #include "CACO.h"
 
-CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, int timer, double afr) {
+const string STATS_PATH = "stats/";
+
+CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr) {
     this->instance = instance;
     this->isCan = isCan;
     this->isRA = isRA;
@@ -54,12 +56,15 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, in
 	this->ibest = 0;
 
     stringstream ss;
-	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.txt";
+    ss << STATS_PATH;
+	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.csv";
 	string filename;
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
-	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
+    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "min_fit" << endl;
+    ss << STATS_PATH;
+    ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
 	string sofilename;
 	ss >> sofilename;
 	ss.clear();
@@ -148,8 +153,8 @@ CACO::~CACO() {
 }
 
 void CACO::run() {
-    long timelimited = (cdnumber + instance->stationNumber) * this->timerate;
-    long timeused = 0;
+    double timelimited = (cdnumber + instance->stationNumber) * this->timerate * 60 * 60; // seconds
+    double timeused = 0;
 	int generationNum = 0;
     //while (timeused < timelimited)
     while (generationNum < 10000)
@@ -188,8 +193,13 @@ void CACO::run() {
         
         usedFes += antno;
         endTime = clock();
-        timeused = (endTime - staTime) / CLOCKS_PER_SEC;
+        timeused = static_cast<double>(endTime - staTime) / CLOCKS_PER_SEC; // seconds
 		result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << bestSolution->fit << endl;
+        // usedFes: 使用过的蚂蚁数
+        // refined: 使用Confidence-based selection挑选出来做local search的蚂蚁数
+        // repaired: 使用Confidence-based selection挑选出来做recharging的蚂蚁数
+        // timeused: 已使用的时间
+        // bestSolution->fit: 目前最好的解
     }
     sofile << fixed << setprecision(8) << bestSolution->fit << endl;
 	for (int i = 0; i < bestSolution->routeNum; i++) {
