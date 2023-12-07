@@ -99,12 +99,12 @@ vector<int> convexHull(vector<int> nodesemp, Case* instance) {
 			for (int j = 0; j < (int)circle.size(); j++) {
 				int k = j;
 				if (j == 0) k = circle.size();
-				if (instance->distances[circle[k - 1]][nodes[i]] + instance->distances[nodes[i]][circle[k % circle.size()]]
-					- instance->distances[circle[k - 1]][circle[k % circle.size()]] < thedis) {
+				if (instance->getDistance(circle[k - 1], nodes[i]) + instance->getDistance(nodes[i], circle[k % circle.size()])
+					- instance->getDistance(circle[k - 1], circle[k % circle.size()]) < thedis) {
 					theind = i;
 					thenode = nodes[theind];
 					thepos = k;
-					thedis = instance->distances[circle[k - 1]][nodes[i]] + instance->distances[nodes[i]][circle[k % circle.size()]] - instance->distances[circle[k - 1]][circle[k % circle.size()]];
+					thedis = instance->getDistance(circle[k - 1], nodes[i]) + instance->getDistance(nodes[i], circle[k % circle.size()]) - instance->getDistance(circle[k - 1], circle[k % circle.size()]);
 				}
 			}
 		}
@@ -144,18 +144,18 @@ pair<vector<int>, double> insertStationByNecessaryCharge(vector<int> route, Case
 	double totaldis = 0;
 	while (counter < (int)route.size())
 	{
-		nowdis += instance->distances[route[counter - 1]][route[counter]];
+		nowdis += instance->getDistance(route[counter - 1], route[counter]);
 		if (nowdis > instance->maxDis) {
 			int thestation = -1;
 			do
 			{
-				nowdis -= instance->distances[route[counter - 1]][route[counter]];
+				nowdis -= instance->getDistance(route[counter - 1], route[counter]);
 				thestation = instance->findNearestStationFeasible(route[counter - 1], route[counter], instance->maxDis - nowdis);
 				counter--;
 			} while (thestation == -1 && counter >= 1);
 			if (thestation == -1) return make_pair(route, -1);
 			route.insert(route.begin() + counter + 1, thestation);
-			totaldis += (nowdis + instance->distances[route[counter]][thestation]);
+			totaldis += (nowdis + instance->getDistance(route[counter], thestation));
 			nowdis = 0;
 			counter++;
 		}
@@ -170,7 +170,7 @@ pair<vector<int>, double> insertStationByRemove(vector<int> route, Case* instanc
 	for (int i = 0; i < (int)route.size() - 1; i++) {
 		double allowedDis = instance->maxDis;
 		if (i != 0) {
-			allowedDis = instance->maxDis - instance->distances[stationInserted.back().second][route[i]];
+			allowedDis = instance->maxDis - instance->getDistance(stationInserted.back().second, route[i]);
 		}
 		int onestation = instance->findNearestStationFeasible(route[i], route[i + 1], allowedDis);
 		if (onestation == -1) return make_pair(route, -1);
@@ -192,22 +192,22 @@ pair<vector<int>, double> insertStationByRemove(vector<int> route, Case* instanc
 			int endstation = next->second;
 			double sumdis = 0;
 			for (int i = 0; i < endInd; i++) {
-				sumdis += instance->distances[route[i]][route[i + 1]];
+				sumdis += instance->getDistance(route[i], route[i + 1]);
 			}
-			sumdis += instance->distances[route[endInd]][endstation];
+			sumdis += instance->getDistance(route[endInd], endstation);
 			if (sumdis <= instance->maxDis) {
-				savedis = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-					- instance->distances[route[itr->first]][route[itr->first + 1]];
+				savedis = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+					- instance->getDistance(route[itr->first], route[itr->first + 1]);
 			}
 		}
 		else {
 			double sumdis = 0;
 			for (int i = 0; i < (int)route.size() - 1; i++) {
-				sumdis += instance->distances[route[i]][route[i + 1]];
+				sumdis += instance->getDistance(route[i], route[i + 1]);
 			}
 			if (sumdis <= instance->maxDis) {
-				savedis = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-					- instance->distances[route[itr->first]][route[itr->first + 1]];
+				savedis = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+					- instance->getDistance(route[itr->first], route[itr->first + 1]);
 			}
 		}
 		itr++;
@@ -222,14 +222,14 @@ pair<vector<int>, double> insertStationByRemove(vector<int> route, Case* instanc
 			if (next != stationInserted.end()) {
 				startInd = prev->first + 1;
 				endInd = next->first;
-				sumdis += instance->distances[prev->second][route[startInd]];
+				sumdis += instance->getDistance(prev->second, route[startInd]);
 				for (int i = startInd; i < endInd; i++) {
-					sumdis += instance->distances[route[i]][route[i + 1]];
+					sumdis += instance->getDistance(route[i], route[i + 1]);
 				}
-				sumdis += instance->distances[route[endInd]][next->second];
+				sumdis += instance->getDistance(route[endInd], next->second);
 				if (sumdis <= instance->maxDis) {
-					double savedistemp = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-						- instance->distances[route[itr->first]][route[itr->first + 1]];
+					double savedistemp = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+						- instance->getDistance(route[itr->first], route[itr->first + 1]);
 					if (savedistemp > savedis) {
 						savedis = savedistemp;
 						delone = itr;
@@ -238,13 +238,13 @@ pair<vector<int>, double> insertStationByRemove(vector<int> route, Case* instanc
 			}
 			else {
 				startInd = prev->first + 1;
-				sumdis += instance->distances[prev->second][route[startInd]];
+				sumdis += instance->getDistance(prev->second, route[startInd]);
 				for (int i = startInd; i < (int)route.size() - 1; i++) {
-					sumdis += instance->distances[route[i]][route[i + 1]];
+					sumdis += instance->getDistance(route[i], route[i + 1]);
 				}
 				if (sumdis <= instance->maxDis) {
-					double savedistemp = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-						- instance->distances[route[itr->first]][route[itr->first + 1]];
+					double savedistemp = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+						- instance->getDistance(route[itr->first], route[itr->first + 1]);
 					if (savedistemp > savedis) {
 						savedis = savedistemp;
 						delone = itr;
@@ -268,7 +268,7 @@ pair<vector<int>, double> insertStationByRemove(vector<int> route, Case* instanc
 	}
 	double summ = 0;
 	for (int i = 0; i < (int)route.size() - 1; i++) {
-		summ += instance->distances[route[i]][route[i + 1]];
+		summ += instance->getDistance(route[i], route[i + 1]);
 	}
 	return make_pair(route, summ);
 }
@@ -279,7 +279,7 @@ pair<vector<int>, double> insertStationByRemove2(vector<int> route, Case* instan
 	for (int i = 0; i < (int)route.size() - 1; i++) {
 		double allowedDis = instance->maxDis;
 		if (i != 0) {
-			allowedDis = instance->maxDis - instance->distances[stationInserted.back().second][route[i]];
+			allowedDis = instance->maxDis - instance->getDistance(stationInserted.back().second, route[i]);
 		}
 		int onestation = instance->findNearestStationFeasible(route[i], route[i + 1], allowedDis);
 		if (onestation == -1) return make_pair(route, -1);
@@ -300,10 +300,10 @@ pair<vector<int>, double> insertStationByRemove2(vector<int> route, Case* instan
 		list<double>::iterator dnext = ditr;
 		snext++;
 		dnext++;
-		double sumdis = *ditr + instance->distances[route[sitr->first]][route[sitr->first + 1]] + *dnext + instance->distances[route[snext->first]][snext->second];
+		double sumdis = *ditr + instance->getDistance(route[sitr->first], route[sitr->first + 1]) + *dnext + instance->getDistance(route[snext->first], snext->second);
 		if (sumdis <= instance->maxDis) {
-			savedis = instance->distances[route[sitr->first]][sitr->second] + instance->distances[sitr->second][route[sitr->first + 1]]
-					- instance->distances[route[sitr->first]][route[sitr->first + 1]];
+			savedis = instance->getDistance(route[sitr->first], sitr->second) + instance->getDistance(sitr->second, route[sitr->first + 1])
+					- instance->getDistance(route[sitr->first], route[sitr->first + 1]);
 		}
 		sitr++;
 		snext++;
@@ -313,10 +313,10 @@ pair<vector<int>, double> insertStationByRemove2(vector<int> route, Case* instan
 		{
 			list<pair<int, int>>::iterator prev = sitr;
 			prev--;
-			sumdis = instance->distances[prev->second][route[prev->first + 1]] + *ditr + instance->distances[route[sitr->first]][route[sitr->first + 1]] + *dnext + instance->distances[route[snext->first]][snext->second];
+			sumdis = instance->getDistance(prev->second, route[prev->first + 1]) + *ditr + instance->getDistance(route[sitr->first], route[sitr->first + 1]) + *dnext + instance->getDistance(route[snext->first], snext->second);
 			if (sumdis <= instance->maxDis) {
-				double savedistemp = instance->distances[route[sitr->first]][sitr->second] + instance->distances[sitr->second][route[sitr->first + 1]]
-						- instance->distances[route[sitr->first]][route[sitr->first + 1]];
+				double savedistemp = instance->getDistance(route[sitr->first], sitr->second) + instance->getDistance(sitr->second, route[sitr->first + 1])
+						- instance->getDistance(route[sitr->first], route[sitr->first + 1]);
 				if (savedistemp > savedis) {
 					savedis = savedistemp;
 					sdelone = sitr;
@@ -331,7 +331,7 @@ pair<vector<int>, double> insertStationByRemove2(vector<int> route, Case* instan
 		if (savedis != 0) {
 			list<double>::iterator ddelonenext = ddelone;
 			ddelonenext++;
-			(*ddelonenext) =(*ddelonenext) + (*ddelone) + instance->distances[route[sdelone->first]][route[sdelone->first + 1]];
+			(*ddelonenext) =(*ddelonenext) + (*ddelone) + instance->getDistance(route[sdelone->first], route[sdelone->first + 1]);
 			stationInserted.erase(sdelone);
 			distanceRecord.erase(ddelone);
 			changed = true;
@@ -346,7 +346,7 @@ pair<vector<int>, double> insertStationByRemove2(vector<int> route, Case* instan
 	}
 	double summ = 0;
 	for (int i = 0; i < (int)route.size() - 1; i++) {
-		summ += instance->distances[route[i]][route[i + 1]];
+		summ += instance->getDistance(route[i], route[i + 1]);
 	}
 	return make_pair(route, summ);
 }
@@ -362,8 +362,8 @@ bool opt2noStation(vector<int>& route, Case* instance) {
 		int mini = 0, minj = 0;
 		for (int i = 0; i < (int)route.size() - 3; i++) {
 			for (int j = i + 2; j < (int)route.size() - 1; j++) {
-				double xx1 = instance->distances[route[i]][route[j]] + instance->distances[route[i + 1]][route[j + 1]];
-				double xx2 = instance->distances[route[i]][route[i + 1]] + instance->distances[route[j]][route[j + 1]];
+				double xx1 = instance->getDistance(route[i], route[j]) + instance->getDistance(route[i + 1], route[j + 1]);
+				double xx2 = instance->getDistance(route[i], route[i + 1]) + instance->getDistance(route[j], route[j + 1]);
 				double change = xx1 - xx2;
 				if (fabs(change) < 0.00000001) change = 0;
 				if (minchange > change) {
@@ -390,8 +390,8 @@ bool opt2noStation2(int* route, int length, double& fitv, Case* instance) {
 		int mini = 0, minj = 0;
 		for (int i = 0; i < length - 3; i++) {
 			for (int j = i + 2; j < length - 1; j++) {
-				double xx1 = instance->distances[route[i]][route[j]] + instance->distances[route[i + 1]][route[j + 1]];
-				double xx2 = instance->distances[route[i]][route[i + 1]] + instance->distances[route[j]][route[j + 1]];
+				double xx1 = instance->getDistance(route[i], route[j]) + instance->getDistance(route[i + 1], route[j + 1]);
+				double xx2 = instance->getDistance(route[i], route[i + 1]) + instance->getDistance(route[j], route[j + 1]);
 				double change = xx1 - xx2;
 				if (fabs(change) < 0.00000001) change = 0;
 				if (minchange > change) {
@@ -432,8 +432,8 @@ bool orNoStation(int* route, int length, double& fitv, Case* instance) {
 		for (int i = 1; i < length - 1; i++) {
 			for (int j = 1; j < length - 1; j++) {
 				if (i < j) {
-					double xx1 = instance->distances[route[i - 1]][route[i]] + instance->distances[route[i]][route[i + 1]] + instance->distances[route[j]][route[j + 1]];
-					double xx2 = instance->distances[route[i - 1]][route[i + 1]] + instance->distances[route[j]][route[i]] + instance->distances[route[i]][route[j + 1]];
+					double xx1 = instance->getDistance(route[i - 1], route[i]) + instance->getDistance(route[i], route[i + 1]) + instance->getDistance(route[j], route[j + 1]);
+					double xx2 = instance->getDistance(route[i - 1], route[i + 1]) + instance->getDistance(route[j], route[i]) + instance->getDistance(route[i], route[j + 1]);
 					double change = xx1 - xx2;
 					if (fabs(change) < 0.00000001) change = 0;
 					if (minchange < change) {
@@ -444,8 +444,8 @@ bool orNoStation(int* route, int length, double& fitv, Case* instance) {
 					}
 				}
 				else if (i > j) {
-					double xx1 = instance->distances[route[i - 1]][route[i]] + instance->distances[route[i]][route[i + 1]] + instance->distances[route[j - 1]][route[j]];
-					double xx2 = instance->distances[route[j - 1]][route[i]] + instance->distances[route[i]][route[j]] + instance->distances[route[i - 1]][route[i + 1]];
+					double xx1 = instance->getDistance(route[i - 1], route[i]) + instance->getDistance(route[i], route[i + 1]) + instance->getDistance(route[j - 1], route[j]);
+					double xx2 = instance->getDistance(route[j - 1], route[i]) + instance->getDistance(route[i], route[j]) + instance->getDistance(route[i - 1], route[i + 1]);
 					double change = xx1 - xx2;
 					if (fabs(change) < 0.00000001) change = 0;
 					if (minchange < change) {
@@ -493,9 +493,9 @@ pair<vector<int>, double> greedymethod(Case* instance) {
 		int lastnode = solution.back();
 		double mindis = DBL_MAX;
 		for (auto e : remain) {
-			if (instance->distances[e][lastnode] < mindis) {
+			if (instance->getDistance(e, lastnode) < mindis) {
 				thenearst = e;
-				mindis = instance->distances[e][lastnode];
+				mindis = instance->getDistance(e, lastnode);
 			}
 		}
 		solution.push_back(thenearst);
@@ -578,12 +578,12 @@ void prinsSplitAnt(Ant* x, Case* instance) {
 		{
 			load += instance->demand[x->circle[j]];
 			if (i == j) {
-				cost = instance->distances[0][x->circle[j]] * 2;
+				cost = instance->getDistance(0, x->circle[j]) * 2;
 			}
 			else {
-				cost = cost - instance->distances[x->circle[j - 1]][0];
-			    cost = cost + instance->distances[x->circle[j - 1]][x->circle[j]];
-			    cost = cost + instance->distances[0][x->circle[j]];
+				cost = cost - instance->getDistance(x->circle[j - 1], 0);
+			    cost = cost + instance->getDistance(x->circle[j - 1], x->circle[j]);
+			    cost = cost + instance->getDistance(0, x->circle[j]);
 			}
 			if (load <= (double)instance->maxC) {
 				if (vv[i - 1] + cost < vv[j]) {
@@ -641,12 +641,12 @@ vector<vector<int>> prinsSplit(vector<int> x, Case* instance) {
 		{
 			load += instance->demand[x[j]];
 			if (i == j) {
-				cost = instance->distances[0][x[j]] * 2;
+				cost = instance->getDistance(0, x[j]) * 2;
 			}
 			else {
-				cost = cost - instance->distances[x[j - 1]][0];
-			    cost = cost + instance->distances[x[j - 1]][x[j]];
-			    cost = cost + instance->distances[0][x[j]];
+				cost = cost - instance->getDistance(x[j - 1], 0);
+			    cost = cost + instance->getDistance(x[j - 1], x[j]);
+			    cost = cost + instance->getDistance(0, x[j]);
 			}
 			if (load <= (double)instance->maxC) {
 				if (vv[i - 1] + cost < vv[j]) {
@@ -680,12 +680,12 @@ pair<double, double> deficitAndDistance(vector<int>& route, Case* instance) {
 	deficit.push_back(instance->maxDis);
 	double totaldis = 0;
 	for (int i = 1; i < (int)route.size(); i++) {
-		totaldis += instance->distances[route[i - 1]][route[i]];
+		totaldis += instance->getDistance(route[i - 1], route[i]);
 		if (route[i - 1] < instance->depotNumber + instance->customerNumber) {
-			deficit.push_back(deficit.back() - instance->distances[route[i - 1]][route[i]]);
+			deficit.push_back(deficit.back() - instance->getDistance(route[i - 1], route[i]));
 		}
 		else {
-			deficit.push_back(instance->maxDis - instance->distances[route[i - 1]][route[i]]);
+			deficit.push_back(instance->maxDis - instance->getDistance(route[i - 1], route[i]));
 		}
 	}
 	double totaldificit = 0;
@@ -762,15 +762,15 @@ pair<vector<int>, double> insertStationByMinDeficit(vector<int> route, Case* ins
 		double pieced = 0;
 		for (int i = prepos; i < nexpos; i++) {
 			if (i + 1 != thepos) {
-				pieced += instance->distances[route[i]][route[i + 1]];
+				pieced += instance->getDistance(route[i], route[i + 1]);
 			}
 			else {
-				pieced += instance->distances[route[i]][route[i + 2]];
+				pieced += instance->getDistance(route[i], route[i + 2]);
 				i++;
 			}
 		}
 		if (pieced <= instance->maxDis) {
-			ttd = ttd - instance->distances[route[thepos]][route[thepos + 1]] - instance->distances[route[thepos]][route[thepos - 1]] + instance->distances[route[thepos - 1]][route[thepos + 1]];
+			ttd = ttd - instance->getDistance(route[thepos], route[thepos + 1]) - instance->getDistance(route[thepos], route[thepos - 1]) + instance->getDistance(route[thepos - 1], route[thepos + 1]);
 			route.erase(route.begin() + thepos);
 			shunxu.erase(shunxu.begin() + thepos);
 			counter--;
@@ -801,7 +801,7 @@ vector<vector<int>> prinsSplit2(vector<int> x, Case* instance) {
 		{ 
 			load += instance->demand[x[j]];
 			if (i == j) {
-				cost = instance->distances[0][x[j]] * 2;
+				cost = instance->getDistance(0, x[j]) * 2;
 				if (cost > instance->maxDis) {
 					vector<int> temparr;
 					temparr.push_back(0);
@@ -814,9 +814,9 @@ vector<vector<int>> prinsSplit2(vector<int> x, Case* instance) {
 				}
 			}
 			else {
-				cost = cost - instance->distances[x[j - 1]][0];
-				cost = cost + instance->distances[x[j - 1]][x[j]];
-				cost = cost + instance->distances[0][x[j]];
+				cost = cost - instance->getDistance(x[j - 1], 0);
+				cost = cost + instance->getDistance(x[j - 1], x[j]);
+				cost = cost + instance->getDistance(0, x[j]);
 				if (cost > instance->maxDis) {
 					vector<int> temparr;
 					temparr.push_back(0);
@@ -877,8 +877,8 @@ bool exchangeNoStation(vector<int>& route, Case* instance) {
 		int mini = 0, minj = 0;
 		for (int i = 1; i < (int)route.size() - 2; i++) {
 			for (int j = i + 1; j < (int)route.size() - 1; j++) {
-				double orid = instance->distances[route[i - 1]][route[i]] + instance->distances[route[i + 1]][route[i]] + instance->distances[route[j - 1]][route[j]] + instance->distances[route[j + 1]][route[j]];
-				double aftd = instance->distances[route[i - 1]][route[j]] + instance->distances[route[i + 1]][route[j]] + instance->distances[route[j - 1]][route[i]] + instance->distances[route[j + 1]][route[i]];
+				double orid = instance->getDistance(route[i - 1], route[i]) + instance->getDistance(route[i + 1], route[i]) + instance->getDistance(route[j - 1], route[j]) + instance->getDistance(route[j + 1], route[j]);
+				double aftd = instance->getDistance(route[i - 1], route[j]) + instance->getDistance(route[i + 1], route[j]) + instance->getDistance(route[j - 1], route[i]) + instance->getDistance(route[j + 1], route[i]);
 				double change = aftd - orid;
 				if (fabs(change) < 0.00000001) change = 0;
 				if (minchange > change) {
@@ -902,19 +902,19 @@ pair<vector<int>, double> insertStationByRemove3(vector<int> route, Case* instan
 	for (int i = 0; i < (int)route.size() - 1; i++) {
 		int thestation = instance->findNearestStationFeasible2(route[i], route[i + 1], instance->maxDis);
 		stationsInserted.push_back(make_pair(i, thestation));
-		distInfor[i + 1] = distInfor[i] + instance->distances[route[i + 1]][route[i]];
+		distInfor[i + 1] = distInfor[i] + instance->getDistance(route[i + 1], route[i]);
 	}
 	//bool suc = false;
 	//insert one station
 	int theone = -1;
 	double theonesavedis = DBL_MAX;
 	for (int i = 0; i < (int)stationsInserted.size(); i++) {
-		double formerd = distInfor[stationsInserted[i].first] + instance->distances[route[stationsInserted[i].first]][stationsInserted[i].second];
+		double formerd = distInfor[stationsInserted[i].first] + instance->getDistance(route[stationsInserted[i].first], stationsInserted[i].second);
 		if (formerd <= instance->maxDis) {
-			double latterd = distInfor.back() - distInfor[stationsInserted[i].first + 1] + instance->distances[route[stationsInserted[i].first + 1]][stationsInserted[i].second];
+			double latterd = distInfor.back() - distInfor[stationsInserted[i].first + 1] + instance->getDistance(route[stationsInserted[i].first + 1], stationsInserted[i].second);
 			if (latterd <= instance->maxDis) {
-				double extradis = instance->distances[route[stationsInserted[i].first]][stationsInserted[i].second] + instance->distances[route[stationsInserted[i].first + 1]][stationsInserted[i].second];
-				extradis -= instance->distances[route[stationsInserted[i].first]][route[stationsInserted[i].first + 1]];
+				double extradis = instance->getDistance(route[stationsInserted[i].first], stationsInserted[i].second) + instance->getDistance(route[stationsInserted[i].first + 1], stationsInserted[i].second);
+				extradis -= instance->getDistance(route[stationsInserted[i].first], route[stationsInserted[i].first + 1]);
 				if (extradis < theonesavedis) {
 					theone = i;
 					theonesavedis = extradis;
@@ -930,19 +930,19 @@ pair<vector<int>, double> insertStationByRemove3(vector<int> route, Case* instan
 	int thetwo2 = -1;
 	double thetwosavedis = DBL_MAX;
 	for (int i = 0; i < (int)stationsInserted.size() - 1; i++) {
-		double formerd = distInfor[stationsInserted[i].first] + instance->distances[route[stationsInserted[i].first]][stationsInserted[i].second];
+		double formerd = distInfor[stationsInserted[i].first] + instance->getDistance(route[stationsInserted[i].first], stationsInserted[i].second);
 		if (formerd <= instance->maxDis) {
 			for (int j = i + 1; j < (int)stationsInserted.size(); j++) {
 				double midis = distInfor[stationsInserted[j].first] - distInfor[stationsInserted[i].first + 1];
-				midis += instance->distances[stationsInserted[i].second][route[stationsInserted[i].first + 1]];
-				midis += instance->distances[route[stationsInserted[j].first]][stationsInserted[j].second];
+				midis += instance->getDistance(stationsInserted[i].second, route[stationsInserted[i].first + 1]);
+				midis += instance->getDistance(route[stationsInserted[j].first], stationsInserted[j].second);
 				if (midis <= instance->maxDis) {
-					double latterd = distInfor.back() - distInfor[stationsInserted[j].first + 1] + instance->distances[route[stationsInserted[j].first + 1]][stationsInserted[j].second];
+					double latterd = distInfor.back() - distInfor[stationsInserted[j].first + 1] + instance->getDistance(route[stationsInserted[j].first + 1], stationsInserted[j].second);
 					if (latterd <= instance->maxDis) {
-						double extradis1 = instance->distances[route[stationsInserted[i].first]][stationsInserted[i].second] + instance->distances[route[stationsInserted[i].first + 1]][stationsInserted[i].second];
-						extradis1 -= instance->distances[route[stationsInserted[i].first]][route[stationsInserted[i].first + 1]];
-						double extradis2 = instance->distances[route[stationsInserted[j].first]][stationsInserted[j].second] + instance->distances[route[stationsInserted[j].first + 1]][stationsInserted[j].second];
-						extradis2 -= instance->distances[route[stationsInserted[j].first]][route[stationsInserted[j].first + 1]];
+						double extradis1 = instance->getDistance(route[stationsInserted[i].first], stationsInserted[i].second) + instance->getDistance(route[stationsInserted[i].first + 1], stationsInserted[i].second);
+						extradis1 -= instance->getDistance(route[stationsInserted[i].first], route[stationsInserted[i].first + 1]);
+						double extradis2 = instance->getDistance(route[stationsInserted[j].first], stationsInserted[j].second) + instance->getDistance(route[stationsInserted[j].first + 1], stationsInserted[j].second);
+						extradis2 -= instance->getDistance(route[stationsInserted[j].first], route[stationsInserted[j].first + 1]);
 						if (extradis1 + extradis2 < thetwosavedis) {
 							thetwo1 = i;
 							thetwo2 = j;
@@ -983,7 +983,7 @@ pair<vector<int>, double> insertStationByRemove3(vector<int> route, Case* instan
 //	vector<double> accumulateDistance(route.size());
 //	accumulateDistance[0] = 0;
 //	for (int i = 1; i < (int)route.size(); i++) {
-//		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+//		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 //	}
 //	//get the best station list vector
 //	//did not consider the extreme situation that there is no feasible station between two customers.
@@ -1000,16 +1000,16 @@ pair<vector<int>, double> insertStationByRemove3(vector<int> route, Case* instan
 //		for (int j = instance->customerNumber + instance->depotNumber; j < instance->customerNumber + instance->depotNumber + instance->stationNumber; j++) {
 //			bool bedominated = false;
 //			for (auto e : acandilist) {
-//				if (instance->distances[route[i]][e] <= instance->distances[route[i]][j] &&
-//					instance->distances[e][route[i + 1]] <= instance->distances[j][route[i + 1]]) {
+//				if (instance->getDistance(route[i], e) <= instance->getDistance(route[i], j) &&
+//					instance->getDistance(e, route[i + 1]) <= instance->getDistance(j, route[i + 1])) {
 //					bedominated = true;
 //					break;
 //				}
 //			}
 //			if (bedominated == false) {
 //				for (int k = 0; k < (int)acandilist.size(); k++) {
-//					if (instance->distances[route[i]][j] <= instance->distances[route[i]][acandilist[k]] &&
-//						instance->distances[j][route[i + 1]] <= instance->distances[acandilist[k]][route[j + 1]]) {
+//					if (instance->getDistance(route[i], j) <= instance->getDistance(route[i], acandilist[k]) &&
+//						instance->getDistance(j, route[i + 1]) <= instance->getDistance(acandilist[k], route[j + 1])) {
 //						acandilist.erase(acandilist.begin() + k);
 //						k--;
 //					}
@@ -1045,7 +1045,7 @@ pair<vector<int>, double> insertStationByEnumerationWithStation(vector<int> rout
 
 	vector<double> accumulateDistance(newroute.size(), 0);
 	for (int i = 1; i < (int)newroute.size(); i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[newroute[i]][newroute[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(newroute[i], newroute[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return make_pair(newroute, accumulateDistance.back());
@@ -1071,7 +1071,7 @@ pair<vector<int>, double> insertStationByEnumerationWithStation(vector<int> rout
 pair<vector<int>, double> insertStationByEnumeration(vector<int> route, Case* instance) {
 	vector<double> accumulateDistance(route.size(), 0);
 	for (int i = 1; i < (int)route.size(); i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return make_pair(route, accumulateDistance.back());
@@ -1099,7 +1099,7 @@ pair<vector<int>, double> insertStationByEnumeration(vector<int> route, Case* in
 pair<vector<int>, double> insertStationByEnumeration(vector<int> route, Case* instance, int ub) {
 	vector<double> accumulateDistance(route.size(), 0);
 	for (int i = 1; i < (int)route.size(); i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return make_pair(route, accumulateDistance.back());
@@ -1149,25 +1149,25 @@ void tryACertainN(int mlen, int nlen, int* chosenSta, int* chosenPos, vector<int
 			}
 			else {
 				bool feasible = true;
-				double piecedis = accumulateDis[chosenPos[0]] + instance->distances[route[chosenPos[0]]][chosenSta[0]];
+				double piecedis = accumulateDis[chosenPos[0]] + instance->getDistance(route[chosenPos[0]], chosenSta[0]);
 				if (piecedis > instance->maxDis) feasible = false;
 				for (int k = 1; feasible && k < curub; k++) {
 					piecedis = accumulateDis[chosenPos[k]] - accumulateDis[chosenPos[k - 1] + 1];
-					piecedis += instance->distances[chosenSta[k - 1]][route[chosenPos[k - 1] + 1]];
-					piecedis += instance->distances[chosenSta[k]][route[chosenPos[k]]];
+					piecedis += instance->getDistance(chosenSta[k - 1], route[chosenPos[k - 1] + 1]);
+					piecedis += instance->getDistance(chosenSta[k], route[chosenPos[k]]);
 					if (piecedis > instance->maxDis) feasible = false;
 				}
 				piecedis = accumulateDis.back() - accumulateDis[chosenPos[curub - 1] + 1];
-				piecedis += instance->distances[route[chosenPos[curub - 1] + 1]][chosenSta[curub - 1]];
+				piecedis += instance->getDistance(route[chosenPos[curub - 1] + 1], chosenSta[curub - 1]);
 				if (piecedis > instance->maxDis) feasible = false;
 				if (feasible) {
 					double totaldis = accumulateDis.back();
 					for (int k = 0; k < curub; k++) {
 						int firstnode = route[chosenPos[k]];
 						int secondnode = route[chosenPos[k] + 1];
-						totaldis -= instance->distances[firstnode][secondnode];
-						totaldis += instance->distances[firstnode][chosenSta[k]];
-						totaldis += instance->distances[chosenSta[k]][secondnode];
+						totaldis -= instance->getDistance(firstnode, secondnode);
+						totaldis += instance->getDistance(firstnode, chosenSta[k]);
+						totaldis += instance->getDistance(chosenSta[k], secondnode);
 					}
 					if (totaldis < finalfit) {
 						finalfit = totaldis;
@@ -1185,7 +1185,7 @@ void tryACertainN(int mlen, int nlen, int* chosenSta, int* chosenPos, vector<int
 pair<vector<int>, double> insertStationBySimpleEnumeration(vector<int> route, Case* instance) {
 	vector<double> accumulateDistance(route.size(), 0);
 	for (int i = 1; i < (int)route.size(); i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return make_pair(route, accumulateDistance.back());
@@ -1211,7 +1211,7 @@ pair<vector<int>, double> insertStationBySimpleEnumeration(vector<int> route, Ca
 double insertStationBySimpleEnumeration2(vector<int> route, Case* instance) {
 	vector<double> accumulateDistance(route.size(), 0);
 	for (int i = 1; i < (int)route.size(); i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return accumulateDistance.back();
@@ -1237,21 +1237,21 @@ double insertStationBySimpleEnumeration2(vector<int> route, Case* instance) {
 void tryACertainN(int mlen, int nlen, int* chosenPos, vector<int>& finalRoute, double& finalfit, int curub, vector<int>& route, vector<double>& accumulateDis, Case* instance) {
 	for (int i = mlen; i <= (int)route.size() - 1 - nlen; i++) {
 		if (curub == nlen) {
-			double onedis = instance->distances[route[i]][instance->bestStation[route[i]][route[i + 1]]];
+			double onedis = instance->getDistance(route[i], instance->bestStation[route[i]][route[i + 1]]);
 			if (accumulateDis[i] + onedis > instance->maxDis) {
 				break;
 			}
 		}
 		else {
 			int lastpos = chosenPos[curub - nlen - 1];
-			double onedis = instance->distances[route[lastpos + 1]][instance->bestStation[route[lastpos]][route[lastpos + 1]]];
-			double twodis = instance->distances[route[i]][instance->bestStation[route[i]][route[i + 1]]];
+			double onedis = instance->getDistance(route[lastpos + 1], instance->bestStation[route[lastpos]][route[lastpos + 1]]);
+			double twodis = instance->getDistance(route[i], instance->bestStation[route[i]][route[i + 1]]);
 			if (accumulateDis[i] - accumulateDis[lastpos + 1] + onedis + twodis > instance->maxDis) {
 				break;
 			}
 		}
 		if (nlen == 1) {
-			double onedis = accumulateDis.back() - accumulateDis[i + 1] + instance->distances[instance->bestStation[route[i]][route[i + 1]]][route[i + 1]];
+			double onedis = accumulateDis.back() - accumulateDis[i + 1] + instance->getDistance(instance->bestStation[route[i]][route[i + 1]], route[i + 1]);
 			if (onedis > instance->maxDis) {
 				continue;
 			}
@@ -1267,9 +1267,9 @@ void tryACertainN(int mlen, int nlen, int* chosenPos, vector<int>& finalRoute, d
 				int firstnode = route[chosenPos[j]];
 				int secondnode = route[chosenPos[j] + 1];
 				int thestation = instance->bestStation[firstnode][secondnode];
-				disum -= instance->distances[firstnode][secondnode];
-				disum += instance->distances[firstnode][thestation];
-				disum += instance->distances[secondnode][thestation];
+				disum -= instance->getDistance(firstnode, secondnode);
+				disum += instance->getDistance(firstnode, thestation);
+				disum += instance->getDistance(secondnode, thestation);
 			}
 			if (disum < finalfit) {
 				// finalRoute = route;
@@ -1290,8 +1290,8 @@ void tryACertainN(int mlen, int nlen, int* chosenPos, vector<int>& finalRoute, d
 //	double sumdis = 0;
 //	double piecedis = 0;
 //	for (int i = 1; i < (int)fixRoute.size(); i++) {
-//		piecedis += instance->distances[fixRoute[i]][fixRoute[i - 1]];
-//		sumdis += instance->distances[fixRoute[i]][fixRoute[i - 1]];
+//		piecedis += instance->getDistance(fixRoute[i], fixRoute[i - 1]);
+//		sumdis += instance->getDistance(fixRoute[i], fixRoute[i - 1]);
 //		if (piecedis > instance->maxDis) {
 //			return;
 //		}
@@ -1331,8 +1331,8 @@ bool opt2StarNoStation(Ant* ant, Case* instance) {
 						//judge two situations
 						//swith tails
 						if (frdem + ant->demsum[r2] - srdem <= instance->maxC && srdem + ant->demsum[r1] - frdem <= instance->maxC) {
-							double xx1 = instance->distances[ant->route[r1][n1]][ant->route[r1][n1 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r2][n2 + 1]];
-							double xx2 = instance->distances[ant->route[r1][n1]][ant->route[r2][n2 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r1][n1 + 1]];
+							double xx1 = instance->getDistance(ant->route[r1][n1], ant->route[r1][n1 + 1]) +instance->getDistance(ant->route[r2][n2], ant->route[r2][n2 + 1]);
+							double xx2 = instance->getDistance(ant->route[r1][n1], ant->route[r2][n2 + 1]) + instance->getDistance(ant->route[r2][n2], ant->route[r1][n1 + 1]);
 							double change = xx1 - xx2;
 							//if can be improved
 							if (change > 0.00000001) {
@@ -1376,8 +1376,8 @@ bool opt2StarNoStation(Ant* ant, Case* instance) {
 							}
 						}
 						else if (frdem + srdem <= instance->maxC && ant->demsum[r1] - frdem + ant->demsum[r2] - srdem <= instance->maxC) {
-							double xx1 = instance->distances[ant->route[r1][n1]][ant->route[r1][n1 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r2][n2 + 1]];
-							double xx2 = instance->distances[ant->route[r1][n1]][ant->route[r2][n2]] + instance->distances[ant->route[r1][n1 + 1]][ant->route[r2][n2 + 1]];
+                            double xx1 = instance->getDistance(ant->route[r1][n1], ant->route[r1][n1 + 1]) + instance->getDistance(ant->route[r2][n2], ant->route[r2][n2 + 1]);
+                            double xx2 = instance->getDistance(ant->route[r1][n1], ant->route[r2][n2]) + instance->getDistance(ant->route[r1][n1 + 1], ant->route[r2][n2 + 1]);
 							double change = xx1 - xx2;
 							if (change > 0.00000001) {
 								memcpy(tempr, ant->route[r1], sizeof(int) * ant->nodeCap);
@@ -1463,8 +1463,8 @@ bool opt2starNoStation2(Ant* ant, Case* instance) {
 			for (int n2 = 0; n2 < ant->nodeNum[r2] - 1; n2++) {
 				srdem += instance->demand[ant->route[r2][n2]];
 				if (frdem + ant->demsum[r2] - srdem <= instance->maxC && srdem + ant->demsum[r1] - frdem <= instance->maxC) {
-					double xx1 = instance->distances[ant->route[r1][n1]][ant->route[r1][n1 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r2][n2 + 1]];
-					double xx2 = instance->distances[ant->route[r1][n1]][ant->route[r2][n2 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r1][n1 + 1]];
+                    double xx1 = instance->getDistance(ant->route[r1][n1], ant->route[r1][n1 + 1]) +instance->getDistance(ant->route[r2][n2], ant->route[r2][n2 + 1]);
+                    double xx2 = instance->getDistance(ant->route[r1][n1], ant->route[r2][n2 + 1]) + instance->getDistance(ant->route[r2][n2], ant->route[r1][n1 + 1]);
 					double change = xx1 - xx2;
 					if (change > 0.00000001) {
 						ant->fit -= change;
@@ -1519,8 +1519,8 @@ bool opt2starNoStation2(Ant* ant, Case* instance) {
 					}
 				}
 				else if (frdem + srdem <= instance->maxC && ant->demsum[r1] - frdem + ant->demsum[r2] - srdem <= instance->maxC) {
-					double xx1 = instance->distances[ant->route[r1][n1]][ant->route[r1][n1 + 1]] + instance->distances[ant->route[r2][n2]][ant->route[r2][n2 + 1]];
-					double xx2 = instance->distances[ant->route[r1][n1]][ant->route[r2][n2]] + instance->distances[ant->route[r1][n1 + 1]][ant->route[r2][n2 + 1]];
+                    double xx1 = instance->getDistance(ant->route[r1][n1], ant->route[r1][n1 + 1]) + instance->getDistance(ant->route[r2][n2], ant->route[r2][n2 + 1]);
+                    double xx2 = instance->getDistance(ant->route[r1][n1], ant->route[r2][n2]) + instance->getDistance(ant->route[r1][n1 + 1], ant->route[r2][n2 + 1]);
 					double change = xx1 - xx2;
 					if (change > 0.00000001) {
 						ant->fit -= change;
@@ -1626,7 +1626,7 @@ void orToAnt(Ant* ant, Case* instance) {
 double insertStationBySimpleEnumerationArray(int* route, int length, Case* instance) {
 	vector<double> accumulateDistance(length, 0);
 	for (int i = 1; i < length; i++) {
-		accumulateDistance[i] = accumulateDistance[i - 1] + instance->distances[route[i]][route[i - 1]];
+		accumulateDistance[i] = accumulateDistance[i - 1] + instance->getDistance(route[i], route[i - 1]);
 	}
 	if (accumulateDistance.back() <= instance->maxDis) {
 		return accumulateDistance.back();
@@ -1651,21 +1651,21 @@ double insertStationBySimpleEnumerationArray(int* route, int length, Case* insta
 void tryACertainNArray(int mlen, int nlen, int* chosenPos, double& finalfit, int curub, int* route, int length, vector<double>& accumulateDis, Case* instance) {
 	for (int i = mlen; i <= length - 1 - nlen; i++) {
 		if (curub == nlen) {
-			double onedis = instance->distances[route[i]][instance->bestStation[route[i]][route[i + 1]]];
+			double onedis = instance->getDistance(route[i], instance->bestStation[route[i]][route[i + 1]]);
 			if (accumulateDis[i] + onedis > instance->maxDis) {
 				break;
 			}
 		}
 		else {
 			int lastpos = chosenPos[curub - nlen - 1];
-			double onedis = instance->distances[route[lastpos + 1]][instance->bestStation[route[lastpos]][route[lastpos + 1]]];
-			double twodis = instance->distances[route[i]][instance->bestStation[route[i]][route[i + 1]]];
+			double onedis = instance->getDistance(route[lastpos + 1], instance->bestStation[route[lastpos]][route[lastpos + 1]]);
+			double twodis = instance->getDistance(route[i], instance->bestStation[route[i]][route[i + 1]]);
 			if (accumulateDis[i] - accumulateDis[lastpos + 1] + onedis + twodis > instance->maxDis) {
 				break;
 			}
 		}
 		if (nlen == 1) {
-			double onedis = accumulateDis.back() - accumulateDis[i + 1] + instance->distances[instance->bestStation[route[i]][route[i + 1]]][route[i + 1]];
+			double onedis = accumulateDis.back() - accumulateDis[i + 1] + instance->getDistance(instance->bestStation[route[i]][route[i + 1]],  route[i + 1]);
 			if (onedis > instance->maxDis) {
 				continue;
 			}
@@ -1681,9 +1681,9 @@ void tryACertainNArray(int mlen, int nlen, int* chosenPos, double& finalfit, int
 				int firstnode = route[chosenPos[j]];
 				int secondnode = route[chosenPos[j] + 1];
 				int thestation = instance->bestStation[firstnode][secondnode];
-				disum -= instance->distances[firstnode][secondnode];
-				disum += instance->distances[firstnode][thestation];
-				disum += instance->distances[secondnode][thestation];
+				disum -= instance->getDistance(firstnode, secondnode);
+				disum += instance->getDistance(firstnode, thestation);
+				disum += instance->getDistance(secondnode, thestation);
 			}
 			if (disum < finalfit) {
 				finalfit = disum;
@@ -1697,7 +1697,7 @@ double insertStationByRemoveArray(int* route, int length, Case* instance) {
 	for (int i = 0; i < length - 1; i++) {
 		double allowedDis = instance->maxDis;
 		if (i != 0) {
-			allowedDis = instance->maxDis - instance->distances[stationInserted.back().second][route[i]];
+			allowedDis = instance->maxDis - instance->getDistance(stationInserted.back().second, route[i]);
 		}
 		int onestation = instance->findNearestStationFeasible(route[i], route[i + 1], allowedDis);
 		if (onestation == -1) return -1;
@@ -1716,22 +1716,22 @@ double insertStationByRemoveArray(int* route, int length, Case* instance) {
 			int endstation = next->second;
 			double sumdis = 0;
 			for (int i = 0; i < endInd; i++) {
-				sumdis += instance->distances[route[i]][route[i + 1]];
+				sumdis += instance->getDistance(route[i], route[i + 1]);
 			}
-			sumdis += instance->distances[route[endInd]][endstation];
+			sumdis += instance->getDistance(route[endInd], endstation);
 			if (sumdis <= instance->maxDis) {
-				savedis = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-					- instance->distances[route[itr->first]][route[itr->first + 1]];
+				savedis = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+					- instance->getDistance(route[itr->first], route[itr->first + 1]);
 			}
 		}
 		else {
 			double sumdis = 0;
 			for (int i = 0; i < length - 1; i++) {
-				sumdis += instance->distances[route[i]][route[i + 1]];
+				sumdis += instance->getDistance(route[i], route[i + 1]);
 			}
 			if (sumdis <= instance->maxDis) {
-				savedis = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-					- instance->distances[route[itr->first]][route[itr->first + 1]];
+				savedis = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+					- instance->getDistance(route[itr->first], route[itr->first + 1]);
 			}
 		}
 		itr++;
@@ -1746,14 +1746,14 @@ double insertStationByRemoveArray(int* route, int length, Case* instance) {
 			if (next != stationInserted.end()) {
 				startInd = prev->first + 1;
 				endInd = next->first;
-				sumdis += instance->distances[prev->second][route[startInd]];
+				sumdis += instance->getDistance(prev->second, route[startInd]);
 				for (int i = startInd; i < endInd; i++) {
-					sumdis += instance->distances[route[i]][route[i + 1]];
+					sumdis += instance->getDistance(route[i], route[i + 1]);
 				}
-				sumdis += instance->distances[route[endInd]][next->second];
+				sumdis += instance->getDistance(route[endInd], next->second);
 				if (sumdis <= instance->maxDis) {
-					double savedistemp = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-						- instance->distances[route[itr->first]][route[itr->first + 1]];
+					double savedistemp = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+						- instance->getDistance(route[itr->first], route[itr->first + 1]);
 					if (savedistemp > savedis) {
 						savedis = savedistemp;
 						delone = itr;
@@ -1762,13 +1762,13 @@ double insertStationByRemoveArray(int* route, int length, Case* instance) {
 			}
 			else {
 				startInd = prev->first + 1;
-				sumdis += instance->distances[prev->second][route[startInd]];
+				sumdis += instance->getDistance(prev->second, route[startInd]);
 				for (int i = startInd; i < length - 1; i++) {
-					sumdis += instance->distances[route[i]][route[i + 1]];
+					sumdis += instance->getDistance(route[i], route[i + 1]);
 				}
 				if (sumdis <= instance->maxDis) {
-					double savedistemp = instance->distances[route[itr->first]][itr->second] + instance->distances[itr->second][route[itr->first + 1]]
-						- instance->distances[route[itr->first]][route[itr->first + 1]];
+					double savedistemp = instance->getDistance(route[itr->first], itr->second) + instance->getDistance(itr->second, route[itr->first + 1])
+						- instance->getDistance(route[itr->first], route[itr->first + 1]);
 					if (savedistemp > savedis) {
 						savedis = savedistemp;
 						delone = itr;
@@ -1787,14 +1787,14 @@ double insertStationByRemoveArray(int* route, int length, Case* instance) {
 	}
 	double sum = 0;
 	for (int i = 0; i < length - 1; i++) {
-		sum += instance->distances[route[i]][route[i + 1]];
+		sum += instance->getDistance(route[i], route[i + 1]);
 	}
 	for (auto& e : stationInserted) {
 		int pos = e.first;
 		int stat = e.second;
-		sum -= instance->distances[route[pos]][route[pos + 1]];
-		sum += instance->distances[route[pos]][stat];
-		sum += instance->distances[stat][route[pos + 1]];
+		sum -= instance->getDistance(route[pos], route[pos + 1]);
+		sum += instance->getDistance(route[pos], stat);
+		sum += instance->getDistance(stat, route[pos + 1]);
 	}
 	return sum;
 }

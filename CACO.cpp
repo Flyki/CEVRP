@@ -106,8 +106,8 @@ void CACO::generateASolutionGreedy(Ant* anant) {
 			double mindis = 999999999;
 			for (int i = 0; i < (int)remain.size(); i++) {
 				if (instance->demand[remain[i]] + loadofroute <= instance->maxC &&
-					instance->distances[lastone][remain[i]] < mindis) {
-					mindis = instance->distances[lastone][remain[i]];
+					instance->getDistance(lastone, remain[i]) < mindis) {
+					mindis = instance->getDistance(lastone, remain[i]);
 					chosenIndex = i;
 				}
 			}
@@ -134,7 +134,7 @@ void CACO::generateASolutionGreedy(Ant* anant) {
     anant->fit = 0;
     for (int i = 0; i < anant->routeNum; i++) {
         for (int j = 0; j < anant->nodeNum[i] - 1; j++) {
-            anant->fit += instance->distances[anant->route[i][j]][anant->route[i][j + 1]];
+            anant->fit += instance->getDistance(anant->route[i][j], anant->route[i][j + 1]);
         }
     }
 }
@@ -245,7 +245,7 @@ void CACO::buildSolutions() {
 				}
 				int lastone = ants[i]->route[routeindex][ants[i]->nodeNum[routeindex] - 1];
 				for (int j = 0; j < choinum; j++) {
-					double heuinfor = (1.0 / instance->distances[lastone][choices[j]]) * (1.0 / instance->distances[lastone][choices[j]]);
+					double heuinfor = (1.0 / instance->getDistance(lastone, choices[j])) * (1.0 / instance->getDistance(lastone, choices[j]));
 					prob[j] = pher[lastone][choices[j]] * heuinfor;
 				}
 				for (int j = 1; j < choinum; j++) {
@@ -337,7 +337,7 @@ void CACO::buildSolutionsFromCandi() {
 				}
 				//roullet wheel selection
 				for (int j = 0; j < choinum; j++) {
-					prob[j] = pher[lastone][choices[j]] * (1.0 / instance->distances[lastone][choices[j]]) * (1.0 / instance->distances[lastone][choices[j]]);
+					prob[j] = pher[lastone][choices[j]] * (1.0 / instance->getDistance(lastone, choices[j])) * (1.0 / instance->getDistance(lastone, choices[j]));
 				}
 				for (int j = 1; j < choinum; j++) {
 					prob[j] += prob[j - 1];
@@ -381,7 +381,7 @@ void CACO::evaluateAll() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
+                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -455,7 +455,7 @@ void CACO::evaluateSome() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
+                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -616,7 +616,7 @@ void CACO::buildSolutions2() {
 			int lastone = ants[i]->circle[counter - 1];
 			memset(prob, 0, sizeof(double) * cdnumber);
 			for (int j = 0; j < (int)alltemp.size(); j++) {
-				double heu1 = 1.0 / instance->distances[lastone][alltemp[j]];
+				double heu1 = 1.0 / instance->getDistance(lastone, alltemp[j]);
 				prob[j] = pher[lastone][alltemp[j]] * pow(heu1, 2.0);
 			}
 			for (int j = 1; j < (int)alltemp.size(); j++) {
@@ -699,7 +699,7 @@ void CACO::buildSolutionsFromCandi2() {
 			}
 			memset(prob, 0, sizeof(double) * cdnumber);
 			for (int j = 0; j < length; j++) {
-				double heu1 = 1.0 / instance->distances[lastone][tobechosen[j]];
+				double heu1 = 1.0 / instance->getDistance(lastone, tobechosen[j]);
 				prob[j] = pher[lastone][tobechosen[j]] * pow(heu1, 2.0);
 			}
 			for (int j = 1; j < length; j++) {
@@ -946,7 +946,7 @@ void CACO::evaluateSomeForOnlyLocalSearch0() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
+                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -1152,7 +1152,7 @@ void CACO::evaluateSomeForOnlyFixing0() {
 		ants[i]->fit = 0;
 		for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
+                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
