@@ -62,7 +62,7 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
-    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "min_fit" << endl;
+    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "min_fit" << endl;
     ss << STATS_PATH;
     ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
 	string sofilename;
@@ -157,7 +157,8 @@ void CACO::run() {
     double timeused = 0;
 	int generationNum = 0;
     //while (timeused < timelimited)
-    while (generationNum < 10000)
+//    while (generationNum < 10000)
+    while (true)
 	{
 		generationNum++;
 		if (representation != 1) {
@@ -194,12 +195,13 @@ void CACO::run() {
         usedFes += antno;
         endTime = clock();
         timeused = static_cast<double>(endTime - staTime) / CLOCKS_PER_SEC; // seconds
-		result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << bestSolution->fit << endl;
+		result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << instance->getEvals() << "," << bestSolution->fit << endl;
         // usedFes: 使用过的蚂蚁数
         // refined: 使用Confidence-based selection挑选出来做local search的蚂蚁数
         // repaired: 使用Confidence-based selection挑选出来做recharging的蚂蚁数
         // timeused: 已使用的时间
         // bestSolution->fit: 目前最好的解
+        if (instance->getEvals() > instance->maxEvals) break; //TODO:
     }
     sofile << fixed << setprecision(8) << bestSolution->fit << endl;
 	for (int i = 0; i < bestSolution->routeNum; i++) {

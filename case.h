@@ -11,6 +11,8 @@
 #include <string>
 #include <stdio.h>
 
+#define MAX_EVALUAION_FACTOR 25000;
+
 using namespace std;
 
 class Case {
@@ -18,7 +20,7 @@ public:
 	Case(string, int);
 	~Case();
 	double getDistance(int, int);
-	double getEnergyDemand(int, int);
+	double getEnergyDemand(int, int) const;
 	double calculateRouteDistance(vector<int>);
 	double calculateRouteDistance(int*, int);
 	double calculateRouteDistance(int*);
@@ -33,8 +35,9 @@ public:
 	vector<int> findTheNonDominatedStations(int, int);
 	vector<set<int>> getCandiList(int candino);
 	vector<vector<int>> getCandiList2(int candino);
+    double getEvals() const;
 
-	int depotNumber;
+    int depotNumber;
 	int customerNumber;
 	int stationNumber;
 	int vehicleNumber;
@@ -53,4 +56,8 @@ public:
 	bool posflag;
 	int ID;
 	vector<vector<int>> candidatelist;
+
+    int actualProblemSize;
+    double evals;
+    double maxEvals;
 };
