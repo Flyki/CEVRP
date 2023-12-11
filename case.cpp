@@ -2,7 +2,9 @@
 
 Case::Case(string filename, int ID) {
 	this->ID = ID;
-	this->filename = filename;
+    size_t lastSeparatorPos = filename.find_last_of('/');
+    string instanceName = filename.substr(lastSeparatorPos + 1);
+	this->filename = instanceName;
 	stringstream ss;
 	this->depotNumber = 1;
 	this->depot = 0;

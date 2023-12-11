@@ -57,14 +57,16 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 
     stringstream ss;
     ss << STATS_PATH;
-	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.csv";
+//	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.csv";
+    ss << "evals." << instance->filename << ".csv";
 	string filename;
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
     result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "min_fit" << endl;
     ss << STATS_PATH;
-    ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
+//    ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
+    ss << "solution." << instance->filename << ".txt";
 	string sofilename;
 	ss >> sofilename;
 	ss.clear();
