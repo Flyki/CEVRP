@@ -1,5 +1,7 @@
 #include "BACO2.h"
 
+const string STATS_PATH = "stats/baco2/";
+
 BACO2::BACO2(Case* instance, int seed) {
 	this->instance = instance;
 	this->cdnumber = instance->depotNumber + instance->customerNumber;
@@ -59,13 +61,16 @@ BACO2::BACO2(Case* instance, int seed) {
 
 	this->ibest = 0;
 	stringstream ss;
-	ss << instance->ID << "." << seed << ".BACO2.result.txt";
-	string filename;
+//	ss << instance->ID << "." << seed << ".BACO2.result.txt";
+    ss << STATS_PATH << "evals." << instance->ID << "." << seed << ".BACO2." << instance->filename << ".csv";
+    string filename;
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
-	ss << instance->ID << "." << seed << ".BACO2.solution.txt";
-	string sofilename;
+    result << "accumulated_ant_num" << "," << "min_fit" << "," << "evals" << endl;
+//    ss << instance->ID << "." << seed << ".BACO2.solution.txt";
+    ss << STATS_PATH << "solution." << instance->ID << "." << seed << ".BACO2." << instance->filename << ".txt";
+    string sofilename;
 	ss >> sofilename;
 	ss.clear();
 	sofile.open(sofilename, ios::app);
@@ -98,18 +103,20 @@ BACO2::~BACO2() {
 void BACO2::run() {
 	long timelimited = (cdnumber + instance->stationNumber) * 36;
 	long timeused = 0;
-	while (timeused < timelimited)//(usedFes < MAXFES)
+//	while (timeused < timelimited)//(usedFes < MAXFES)
+    while (true)
 	{
 		buildSolutionsByCL();
 		evaluateAndUpdatePher();
-		result << usedFes << ',' << gbestf << endl;
-		//gettimeofday(&t2, NULL);
+		result << usedFes << ',' << gbestf << "," << instance->getEvals() << endl;
+        //gettimeofday(&t2, NULL);
 		t2 = clock();
 		//timeused = t2.tv_sec - t1.tv_sec;
 		timeused = (t2 - t1) / CLOCKS_PER_SEC;
-	}
+        if (instance->getEvals() > instance->maxEvals) break; //TODO:
+    }
 	sofile << fixed << setprecision(8) << gbestf << endl;
-	for (auto e : bestSolution) {
+    for (auto e : bestSolution) {
 		sofile << e << ',';
 	}
 	sofile << endl;
