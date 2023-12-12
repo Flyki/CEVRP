@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     int seed = 1;
     int isCan = 1; // population initialization, 1 for "buildSolutionFromCandidates", otherwise "buildSolution"
     int isRA = 1; // weather using confidence-based selection strategy, 1 means yes, 0 means no
-    int representation = 1; // 1 represents order-split, 2 represents direct with local search
+    int representation = 2; // 1 represents order-split, 2 represents direct with local search
     double timer; // the stop criteria of the algorithm max execution time,
     if (instance->customerNumber <= 100) {
         timer = 1.0 /100;
