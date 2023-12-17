@@ -1,6 +1,6 @@
 #include "CACO.h"
 
-const string STATS_PATH = "stats/";
+const string STATS_PATH = "stats/max-time/order-split/";
 
 CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr) {
     this->instance = instance;
@@ -63,7 +63,7 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
-    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "min_fit" << endl;
+    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "progress" << "," << "min_fit" << endl;
     ss << STATS_PATH;
 //    ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
     ss << "solution." << instance->filename << ".txt";
@@ -158,9 +158,9 @@ void CACO::run() {
     double timelimited = (cdnumber + instance->stationNumber) * this->timerate * 60 * 60; // seconds
     double timeused = 0;
 	int generationNum = 0;
-    //while (timeused < timelimited)
+    while (timeused < timelimited)
 //    while (generationNum < 10000)
-    while (true)
+//    while (true)
 	{
 		generationNum++;
 		if (representation != 1) {
@@ -197,13 +197,14 @@ void CACO::run() {
         usedFes += antno;
         endTime = clock();
         timeused = static_cast<double>(endTime - staTime) / CLOCKS_PER_SEC; // seconds
-		result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << instance->getEvals() << "," << bestSolution->fit << endl;
+        double evals = instance->getEvals();
+        result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << evals << "," << evals/instance->maxEvals << "," << bestSolution->fit << endl;
         // usedFes: 使用过的蚂蚁数
         // refined: 使用Confidence-based selection挑选出来做local search的蚂蚁数
         // repaired: 使用Confidence-based selection挑选出来做recharging的蚂蚁数
         // timeused: 已使用的时间
         // bestSolution->fit: 目前最好的解
-        if (instance->getEvals() > instance->maxEvals) break; //TODO:
+//        if (instance->getEvals() > instance->maxEvals) break; //TODO:
     }
     sofile << fixed << setprecision(8) << bestSolution->fit << endl;
 	for (int i = 0; i < bestSolution->routeNum; i++) {

@@ -2,9 +2,13 @@
 /cmake-build-debug/
 .DS_Store
 ./venv/
-/stats/
+#/stats/
 ./stats/
-./stats/*
+/stats/baco2/
+/stats/direct-encoding/
+/stats/indirect-encoding/
+/stats/without-confsel-direct/
+/stats/without-confsel-indirect/
 
 CMakeLists.txt.user
 CMakeCache.txt
