@@ -1,6 +1,6 @@
 #include "BACO2.h"
 
-const string STATS_PATH = "stats/baco2/";
+const string STATS_PATH = "stats/max-time/baco/";
 
 BACO2::BACO2(Case* instance, int seed) {
 	this->instance = instance;
@@ -67,7 +67,7 @@ BACO2::BACO2(Case* instance, int seed) {
 	ss >> filename;
 	ss.clear();
 	result.open(filename, ios::app);
-    result << "accumulated_ant_num" << "," << "min_fit" << "," << "evals" << endl;
+    result << "accumulated_ant_num" << "," << "min_fit" << "," << "evals" << "," << "progress" << "," << "time_used" << endl;
 //    ss << instance->ID << "." << seed << ".BACO2.solution.txt";
     ss << STATS_PATH << "solution." << instance->ID << "." << seed << ".BACO2." << instance->filename << ".txt";
     string sofilename;
@@ -101,19 +101,28 @@ BACO2::~BACO2() {
 }
 
 void BACO2::run() {
-	long timelimited = (cdnumber + instance->stationNumber) * 36;
-	long timeused = 0;
-//	while (timeused < timelimited)//(usedFes < MAXFES)
-    while (true)
+    double timerate;
+    if (instance->customerNumber <= 100) {
+        timerate = 1.0 /100;
+    } else if (instance->customerNumber <= 915) {
+        timerate = 2.0 /100;
+    } else {
+        timerate = 3.0 /100;
+    }
+    double timelimited = (cdnumber + instance->stationNumber) * timerate * 60 * 60; // seconds
+    double timeused = 0;
+	while (timeused < timelimited)//(usedFes < MAXFES)
+//    while (true)
 	{
 		buildSolutionsByCL();
 		evaluateAndUpdatePher();
-		result << usedFes << ',' << gbestf << "," << instance->getEvals() << endl;
+        t2 = clock();
         //gettimeofday(&t2, NULL);
-		t2 = clock();
-		//timeused = t2.tv_sec - t1.tv_sec;
-		timeused = (t2 - t1) / CLOCKS_PER_SEC;
-        if (instance->getEvals() > instance->maxEvals) break; //TODO:
+        //timeused = t2.tv_sec - t1.tv_sec;
+        timeused = static_cast<double>(t2 - t1) / CLOCKS_PER_SEC;
+        double evals = instance->getEvals();
+		result << usedFes << ',' << gbestf << "," << instance->getEvals() << "," << evals/instance->maxEvals  << "," << timeused << endl;
+//        if (instance->getEvals() > instance->maxEvals) break; //TODO:
     }
 	sofile << fixed << setprecision(8) << gbestf << endl;
     for (auto e : bestSolution) {
