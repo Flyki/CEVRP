@@ -1,6 +1,6 @@
 #include "CACO.h"
 
-const string STATS_PATH = "stats/max-time/order-split/";
+const string STATS_PATH = "stats/max-time/direct/";
 
 CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr) {
     this->instance = instance;
