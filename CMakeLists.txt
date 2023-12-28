@@ -19,3 +19,7 @@ add_executable(CEVRP_Yahui
         utilities.cpp
         utilities.h
         main.cpp)
+
+# Link with pthread
+find_package(Threads REQUIRED)
+target_link_libraries(CEVRP_Yahui PRIVATE Threads::Threads)
