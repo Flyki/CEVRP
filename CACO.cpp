@@ -1,6 +1,5 @@
 #include "CACO.h"
 
-const string STATS_PATH = "stats/max-time/direct/";
 
 CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr) {
     this->instance = instance;
@@ -55,22 +54,17 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 	}
 	this->ibest = 0;
 
-    stringstream ss;
-    ss << STATS_PATH;
-//	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.csv";
-    ss << "evals." << instance->filename << ".csv";
-	string filename;
-	ss >> filename;
-	ss.clear();
-	result.open(filename, ios::app);
+    string instanceName = instance->filename.substr(0, instance->filename.find_last_of('.'));
+    string directoryPath = STATS_PATH + "/" + instanceName + "/" + to_string(seed);
+    create_directories_if_not_exists(directoryPath);
+    string filename = "evols." + to_string(isCan) + "." + to_string(isRA) + "." + to_string(representation) + "." + instanceName + ".csv";
+    result.open(directoryPath + "/" + filename);
     result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "progress" << "," << "min_fit" << endl;
-    ss << STATS_PATH;
-//    ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
-    ss << "solution." << instance->filename << ".txt";
-	string sofilename;
-	ss >> sofilename;
-	ss.clear();
-	sofile.open(sofilename, ios::app);
+
+//    string solDirectoryPath = STATS_PATH + "/" + instanceName;
+//    create_directories_if_not_exists(solDirectoryPath);
+    string sofilename = "solution." + to_string(isCan) + "." + to_string(isRA) + "." + to_string(representation) + "." + instanceName + ".txt";
+    sofile.open(directoryPath + "/" + sofilename);
 
     default_random_engine gent(seed);
 	this->gen = gent;
@@ -1364,4 +1358,20 @@ double CACO::fixOneSolution(Ant* anant) {
     afit = round(afit * 1000000.0) / 1000000.0;
 	anant->fit = afit;
     return afit;
+}
+
+bool CACO::create_directories_if_not_exists(const string &directoryPath) {
+    if (!fs::exists(directoryPath)) {
+        try {
+            fs::create_directories(directoryPath);
+//            std::cout << "Directory created successfully: " << directoryPath << std::endl;
+            return true;
+        } catch (const std::exception& e) {
+//            std::cerr << "Error creating directory: " << e.what() << std::endl;
+            return false;
+        }
+    } else {
+//        std::cout << "Directory already exists: " << directoryPath << std::endl;
+        return true;
+    }
 }

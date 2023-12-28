@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(CEVRP_Yahui)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3") # -O3 optimization argument
 

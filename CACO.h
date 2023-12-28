@@ -9,14 +9,21 @@
 #include <algorithm>
 #include <random>
 #include <time.h>
+#include <filesystem>
+
 #include "case.h"
 #include "utilities.h"
 #include "ant.h"
 
+const string STATS_PATH = "stats/baco";
+
+namespace fs = std::filesystem;
 using namespace std;
 
 class CACO {
 public:
+    static bool create_directories_if_not_exists(const std::string& directoryPath); // by Yinghao
+
     //for representation 1 represents order-split, 2 represents direct with local search
     CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr);
     ~CACO();
