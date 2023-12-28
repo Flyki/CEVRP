@@ -15,7 +15,7 @@
 #include "utilities.h"
 #include "ant.h"
 
-const string STATS_PATH = "stats/baco";
+const string STATS_PATH = "stats/cbaco-indirect";
 
 namespace fs = std::filesystem;
 using namespace std;
