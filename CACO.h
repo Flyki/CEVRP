@@ -8,24 +8,18 @@
 #include <sstream>
 #include <algorithm>
 #include <random>
-#include <time.h>
-#include <filesystem>
-
+#include <chrono>
 #include "case.h"
 #include "utilities.h"
 #include "ant.h"
+#include "stats.h"
 
-const string STATS_PATH = "stats/cbaco-direct";
-
-namespace fs = std::filesystem;
 using namespace std;
 
-class CACO {
+class CACO : public StatsInterface{
 public:
-    static bool create_directories_if_not_exists(const std::string& directoryPath); // by Yinghao
-
     //for representation 1 represents order-split, 2 represents direct with local search
-    CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr);
+    CACO(Case* instance, int seed, int isCan, int isRA, int representation, int timer, double afr);
     ~CACO();
     void run();
     //traditional representations
@@ -73,8 +67,8 @@ public:
     default_random_engine gen;
     uniform_real_distribution<double> udis;
     normal_distribution<double> ndis;
-    clock_t staTime;
-    clock_t endTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> staTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
     vector<vector<int>> candidatelist;
     vector<double> refiningImprovement;
     double maxRefine;
@@ -82,5 +76,5 @@ public:
     long int usedFes;
     long int refined;
     long int repaired;
-    double timerate;
+    int timerate;
 };

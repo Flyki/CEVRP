@@ -1,7 +1,5 @@
 #include "BACO2.h"
 
-const string STATS_PATH = "stats/max-time/baco/";
-
 BACO2::BACO2(Case* instance, int seed) {
 	this->instance = instance;
 	this->cdnumber = instance->depotNumber + instance->customerNumber;
@@ -60,20 +58,23 @@ BACO2::BACO2(Case* instance, int seed) {
 	}
 
 	this->ibest = 0;
+
+    size_t lastSlashPosition = instance->filename.find_last_of('/');
+    size_t dotPosition = instance->filename.find_last_of('.');
+    std::string instanceName = instance->filename.substr(lastSlashPosition + 1, dotPosition - lastSlashPosition - 1);
+    string directoryPath = statsPath + "/" + "baco" + "/" + instanceName + "/" + to_string(seed);
+    create_directories_if_not_exists(directoryPath);
 	stringstream ss;
-//	ss << instance->ID << "." << seed << ".BACO2.result.txt";
-    ss << STATS_PATH << "evals." << instance->ID << "." << seed << ".BACO2." << instance->filename << ".csv";
-    string filename;
+	ss << instance->ID << "." << seed << ".BACO2.result.txt";
+	string filename;
 	ss >> filename;
 	ss.clear();
-	result.open(filename, ios::app);
-    result << "accumulated_ant_num" << "," << "min_fit" << "," << "evals" << "," << "progress" << "," << "time_used" << endl;
-//    ss << instance->ID << "." << seed << ".BACO2.solution.txt";
-    ss << STATS_PATH << "solution." << instance->ID << "." << seed << ".BACO2." << instance->filename << ".txt";
-    string sofilename;
+	result.open(directoryPath + "/" + filename);
+	ss << instance->ID << "." << seed << ".BACO2.solution.txt";
+	string sofilename;
 	ss >> sofilename;
 	ss.clear();
-	sofile.open(sofilename, ios::app);
+	sofile.open(directoryPath + "/" + sofilename);
 	default_random_engine gent(seed);
 	gen = gent;
 	uniform_real_distribution<double> udist(0.0, 1.0);
@@ -82,7 +83,7 @@ BACO2::BACO2(Case* instance, int seed) {
 	this->usedFes = 0;
 	this->candinumber = 20;
 	this->candidatelist = instance->candidatelist;
-	t1 = clock();
+    this->staTime = std::chrono::high_resolution_clock::now();
 }
 
 BACO2::~BACO2() {
@@ -101,31 +102,26 @@ BACO2::~BACO2() {
 }
 
 void BACO2::run() {
-    double timerate;
-    if (instance->customerNumber <= 100) {
-        timerate = 1.0 /100;
-    } else if (instance->customerNumber <= 915) {
-        timerate = 2.0 /100;
+    int v;
+    if (cdnumber <= 101) {
+        v = 1;
+    } else if (cdnumber <= 916) {
+        v = 2;
     } else {
-        timerate = 3.0 /100;
+        v = 3;
     }
-    double timelimited = (cdnumber + instance->stationNumber) * timerate * 60 * 60; // seconds
-    double timeused = 0;
+	long timelimited = v * (cdnumber + instance->stationNumber) * 36;
+	long timeused = 0;
 	while (timeused < timelimited)//(usedFes < MAXFES)
-//    while (true)
 	{
 		buildSolutionsByCL();
 		evaluateAndUpdatePher();
-        t2 = clock();
-        //gettimeofday(&t2, NULL);
-        //timeused = t2.tv_sec - t1.tv_sec;
-        timeused = static_cast<double>(t2 - t1) / CLOCKS_PER_SEC;
-        double evals = instance->getEvals();
-		result << usedFes << ',' << gbestf << "," << instance->getEvals() << "," << evals/instance->maxEvals  << "," << timeused << endl;
-//        if (instance->getEvals() > instance->maxEvals) break; //TODO:
+        endTime = std::chrono::high_resolution_clock::now();
+        timeused = std::chrono::duration_cast<std::chrono::seconds>(endTime - staTime).count();
+        result << usedFes << ',' << gbestf  << "," << timeused << endl;
     }
 	sofile << fixed << setprecision(8) << gbestf << endl;
-    for (auto e : bestSolution) {
+	for (auto e : bestSolution) {
 		sofile << e << ',';
 	}
 	sofile << endl;

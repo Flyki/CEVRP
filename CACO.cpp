@@ -1,7 +1,6 @@
 #include "CACO.h"
 
-
-CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, double timer, double afr) {
+CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, int timer, double afr) {
     this->instance = instance;
     this->isCan = isCan;
     this->isRA = isRA;
@@ -54,17 +53,27 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 	}
 	this->ibest = 0;
 
-    string instanceName = instance->filename.substr(0, instance->filename.find_last_of('.'));
-    string directoryPath = STATS_PATH + "/" + instanceName + "/" + to_string(seed);
+    size_t lastSlashPosition = instance->filename.find_last_of('/');
+    size_t dotPosition = instance->filename.find_last_of('.');
+    std::string instanceName = instance->filename.substr(lastSlashPosition + 1, dotPosition - lastSlashPosition - 1);
+    string directoryPath;
+    if (representation == 1) {
+        directoryPath = statsPath + "/" + "cbaco-i" + "/" + instanceName + "/" + to_string(seed);
+    } else {
+        directoryPath = statsPath + "/" + "cbaco-d" + "/" + instanceName + "/" + to_string(seed);
+    }
     create_directories_if_not_exists(directoryPath);
-    string filename = "evols." + to_string(isCan) + "." + to_string(isRA) + "." + to_string(representation) + "." + instanceName + ".csv";
-    result.open(directoryPath + "/" + filename);
-    result << "accumulated_ant_num" << "," << "upper_size" << "," << "lower_size" << "," << "time_used" << "," << "evals" << "," << "progress" << "," << "min_fit" << endl;
-
-//    string solDirectoryPath = STATS_PATH + "/" + instanceName;
-//    create_directories_if_not_exists(solDirectoryPath);
-    string sofilename = "solution." + to_string(isCan) + "." + to_string(isRA) + "." + to_string(representation) + "." + instanceName + ".txt";
-    sofile.open(directoryPath + "/" + sofilename);
+    stringstream ss;
+	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".result.txt";
+	string filename;
+	ss >> filename;
+	ss.clear();
+	result.open(directoryPath + "/" + filename);
+	ss << instance->ID << "." << seed << "." << isCan << "." << isRA << "." << representation << ".CACO_AF" << afr << ".solution.txt";
+	string sofilename;
+	ss >> sofilename;
+	ss.clear();
+	sofile.open(directoryPath + "/" + sofilename);
 
     default_random_engine gent(seed);
 	this->gen = gent;
@@ -78,7 +87,7 @@ CACO::CACO(Case* instance, int seed, int isCan, int isRA, int representation, do
 	}
     this->maxRefine = BIGVALUE;
     this->minRepair = 0;
-	this->staTime = clock();
+    this->staTime = std::chrono::high_resolution_clock::now();
 	this->afr = afr;
 }
 
@@ -102,8 +111,8 @@ void CACO::generateASolutionGreedy(Ant* anant) {
 			double mindis = 999999999;
 			for (int i = 0; i < (int)remain.size(); i++) {
 				if (instance->demand[remain[i]] + loadofroute <= instance->maxC &&
-					instance->getDistance(lastone, remain[i]) < mindis) {
-					mindis = instance->getDistance(lastone, remain[i]);
+					instance->distances[lastone][remain[i]] < mindis) {
+					mindis = instance->distances[lastone][remain[i]];
 					chosenIndex = i;
 				}
 			}
@@ -130,7 +139,7 @@ void CACO::generateASolutionGreedy(Ant* anant) {
     anant->fit = 0;
     for (int i = 0; i < anant->routeNum; i++) {
         for (int j = 0; j < anant->nodeNum[i] - 1; j++) {
-            anant->fit += instance->getDistance(anant->route[i][j], anant->route[i][j + 1]);
+            anant->fit += instance->distances[anant->route[i][j]][anant->route[i][j + 1]];
         }
     }
 }
@@ -149,12 +158,11 @@ CACO::~CACO() {
 }
 
 void CACO::run() {
-    double timelimited = (cdnumber + instance->stationNumber) * this->timerate * 60 * 60; // seconds
-    double timeused = 0;
+    long timelimited = (cdnumber + instance->stationNumber) * this->timerate;
+    long timeused = 0;
 	int generationNum = 0;
     while (timeused < timelimited)
 //    while (generationNum < 10000)
-//    while (true)
 	{
 		generationNum++;
 		if (representation != 1) {
@@ -189,16 +197,9 @@ void CACO::run() {
 		}
         
         usedFes += antno;
-        endTime = clock();
-        timeused = static_cast<double>(endTime - staTime) / CLOCKS_PER_SEC; // seconds
-        double evals = instance->getEvals();
-        result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << evals << "," << evals/instance->maxEvals << "," << bestSolution->fit << endl;
-        // usedFes: 使用过的蚂蚁数
-        // refined: 使用Confidence-based selection挑选出来做local search的蚂蚁数
-        // repaired: 使用Confidence-based selection挑选出来做recharging的蚂蚁数
-        // timeused: 已使用的时间
-        // bestSolution->fit: 目前最好的解
-//        if (instance->getEvals() > instance->maxEvals) break; //TODO:
+        endTime = std::chrono::high_resolution_clock::now();
+        timeused = std::chrono::duration_cast<std::chrono::seconds>(endTime - staTime).count();
+		result << usedFes << ',' << refined << ',' << repaired << ',' << timeused << ',' << bestSolution->fit << endl;
     }
     sofile << fixed << setprecision(8) << bestSolution->fit << endl;
 	for (int i = 0; i < bestSolution->routeNum; i++) {
@@ -244,7 +245,7 @@ void CACO::buildSolutions() {
 				}
 				int lastone = ants[i]->route[routeindex][ants[i]->nodeNum[routeindex] - 1];
 				for (int j = 0; j < choinum; j++) {
-					double heuinfor = (1.0 / instance->getDistance(lastone, choices[j])) * (1.0 / instance->getDistance(lastone, choices[j]));
+					double heuinfor = (1.0 / instance->distances[lastone][choices[j]]) * (1.0 / instance->distances[lastone][choices[j]]);
 					prob[j] = pher[lastone][choices[j]] * heuinfor;
 				}
 				for (int j = 1; j < choinum; j++) {
@@ -336,7 +337,7 @@ void CACO::buildSolutionsFromCandi() {
 				}
 				//roullet wheel selection
 				for (int j = 0; j < choinum; j++) {
-					prob[j] = pher[lastone][choices[j]] * (1.0 / instance->getDistance(lastone, choices[j])) * (1.0 / instance->getDistance(lastone, choices[j]));
+					prob[j] = pher[lastone][choices[j]] * (1.0 / instance->distances[lastone][choices[j]]) * (1.0 / instance->distances[lastone][choices[j]]);
 				}
 				for (int j = 1; j < choinum; j++) {
 					prob[j] += prob[j - 1];
@@ -380,7 +381,7 @@ void CACO::evaluateAll() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
+                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -454,7 +455,7 @@ void CACO::evaluateSome() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
+                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -615,7 +616,7 @@ void CACO::buildSolutions2() {
 			int lastone = ants[i]->circle[counter - 1];
 			memset(prob, 0, sizeof(double) * cdnumber);
 			for (int j = 0; j < (int)alltemp.size(); j++) {
-				double heu1 = 1.0 / instance->getDistance(lastone, alltemp[j]);
+				double heu1 = 1.0 / instance->distances[lastone][alltemp[j]];
 				prob[j] = pher[lastone][alltemp[j]] * pow(heu1, 2.0);
 			}
 			for (int j = 1; j < (int)alltemp.size(); j++) {
@@ -698,7 +699,7 @@ void CACO::buildSolutionsFromCandi2() {
 			}
 			memset(prob, 0, sizeof(double) * cdnumber);
 			for (int j = 0; j < length; j++) {
-				double heu1 = 1.0 / instance->getDistance(lastone, tobechosen[j]);
+				double heu1 = 1.0 / instance->distances[lastone][tobechosen[j]];
 				prob[j] = pher[lastone][tobechosen[j]] * pow(heu1, 2.0);
 			}
 			for (int j = 1; j < length; j++) {
@@ -945,7 +946,7 @@ void CACO::evaluateSomeForOnlyLocalSearch0() {
         ants[i]->fit = 0;
         for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
+                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -1151,7 +1152,7 @@ void CACO::evaluateSomeForOnlyFixing0() {
 		ants[i]->fit = 0;
 		for (int j = 0; j < ants[i]->routeNum; j++) {
             for (int k = 0; k < ants[i]->nodeNum[j] - 1; k++) {
-                ants[i]->fit += instance->getDistance(ants[i]->route[j][k], ants[i]->route[j][k + 1]);
+                ants[i]->fit += instance->distances[ants[i]->route[j][k]][ants[i]->route[j][k + 1]];
             }
         }
         ants[i]->fit = round(ants[i]->fit * 1000000.0) / 1000000.0;
@@ -1358,20 +1359,4 @@ double CACO::fixOneSolution(Ant* anant) {
     afit = round(afit * 1000000.0) / 1000000.0;
 	anant->fit = afit;
     return afit;
-}
-
-bool CACO::create_directories_if_not_exists(const string &directoryPath) {
-    if (!fs::exists(directoryPath)) {
-        try {
-            fs::create_directories(directoryPath);
-//            std::cout << "Directory created successfully: " << directoryPath << std::endl;
-            return true;
-        } catch (const std::exception& e) {
-//            std::cerr << "Error creating directory: " << e.what() << std::endl;
-            return false;
-        }
-    } else {
-//        std::cout << "Directory already exists: " << directoryPath << std::endl;
-        return true;
-    }
 }

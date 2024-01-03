@@ -9,14 +9,15 @@
 #include <algorithm>
 #include <random>
 //#include <sys/time.h>
-#include <time.h>
+#include <chrono>
 #include <queue>
 #include "case.h"
 #include "utilities.h"
+#include "stats.h"
 
 using namespace std;
 
-class BACO2 {
+class BACO2 : public StatsInterface{
 public:
 	BACO2(Case*, int);
 	~BACO2();
@@ -46,7 +47,7 @@ public:
 	uniform_real_distribution<double> udis;
 	long usedFes;
 	int candinumber;
-	//timeval t1, t2;
-	clock_t t1, t2;
+    std::chrono::time_point<std::chrono::high_resolution_clock> staTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
 	vector<vector<int>> candidatelist;
 };

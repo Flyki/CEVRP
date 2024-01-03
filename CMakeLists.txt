@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(CEVRP_Yahui)
+project(CEVRP-Yahui)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3") # -O3 optimization argument
 
 include_directories(.)
 
-add_executable(CEVRP_Yahui
+add_executable(CEVRP-Yahui
         ant.h
         BACO2.cpp
         BACO2.h
@@ -18,8 +18,10 @@ add_executable(CEVRP_Yahui
         struct.h
         utilities.cpp
         utilities.h
-        main.cpp)
+        main.cpp
+        stats.h
+        stats.cpp)
 
 # Link with pthread
 find_package(Threads REQUIRED)
-target_link_libraries(CEVRP_Yahui PRIVATE Threads::Threads)
+target_link_libraries(CEVRP-Yahui PRIVATE Threads::Threads)

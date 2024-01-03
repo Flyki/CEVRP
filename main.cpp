@@ -3,138 +3,129 @@
 //
 
 #include <iostream>
-#include <fstream>
 #include <thread>
-#include <sstream>
 
 #include "case.h"
-#include "utilities.h"
-#include "ant.h"
 #include "CACO.h"
-#include "struct.h"
 #include "BACO2.h"
+#include "stats.h"
 
 #define MAX_TRIALS 20
 
 using namespace std;
 
+// Enum for Algorithms
+enum class Algorithm {BACO, CBACO};
+
 const string DATA_PATH = "instances/";
-
-struct PopulationMetrics {
-    double min{};
-    double max{};
-    double avg{};
-    double std{};
-    std::size_t size{}; // population size
-};
+const string STATS_PATH = "stats";
 
 
-PopulationMetrics calculate_population_metrics(const std::vector<double> &data) {
-    PopulationMetrics metrics;
-
-    metrics.size = data.size();
-
-    if (data.empty()) {
-        metrics.min = 0.0;
-        metrics.max = 0.0;
-        metrics.avg = 0.0;
-        metrics.std = 0.0;
-    } else {
-        // Calculate min, max, mean, and standard deviation for feasible data
-        metrics.min = *std::min_element(data.begin(), data.end());
-        metrics.max = *std::max_element(data.begin(), data.end());
-
-        double sum = 0.0;
-        for (double value : data) {
-            sum += value;
-        }
-        metrics.avg = sum / static_cast<double>(data.size());
-
-        double sumSquaredDiff = 0.0;
-        for (double value : data) {
-            double diff = value - metrics.avg;
-            sumSquaredDiff += diff * diff;
-        }
-        metrics.std = (data.size() == 1) ? 0.0 : std::sqrt(sumSquaredDiff / static_cast<double>(data.size() - 1));
-    }
-
-    return metrics;
-}
-
-void stats_for_multiple_trials(const std::string& filePath, const std::vector<double>& data) {
-    std::ofstream logStats;
-
-    logStats.open(filePath);
-
-    std::ostringstream oss;
-    for (auto& perf:data) {
-        oss << fixed << setprecision(2) << perf << endl;
-    }
-    PopulationMetrics metric = calculate_population_metrics(data);
-    oss << "Mean " << metric.avg << "\t \tStd Dev " << metric.std << "\t " << endl;
-    oss << "Min: " << metric.min << "\t " << endl;
-    oss << "Max: " << metric.max << "\t " << endl;
-    logStats << oss.str() << flush;
-
-    logStats.close();
-}
-
-
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     int run;
-
-    if (argc < 5) {
-        cerr << "Usage: " << argv[0] << " <problem_instance_filename> <pop_init> <confidence_based_selection> <representation>" << endl;
-        return 1;
+    if (argc != 3 && argc != 6) {
+        std::cerr << "Usage: " << argv[0] << " <algorithm: baco, cbaco> <problem_instance_filename>\n";
+        std::cerr << "       " << argv[0] << " <algorithm: baco, cbaco> <problem_instance_filename> <pop_init> <confidence_based_selection> <representation>\n";
+        return 1; // Exit with an error code
     }
 
-    string instanceName(argv[1]);
-    int isCan = std::stoi(argv[2]);; // population initialization, 1 for "buildSolutionFromCandidates", otherwise "buildSolution"
-    int isRA = std::stoi(argv[3]); // weather using confidence-based selection strategy, 1 means yes, 0 means no
-    int representation = std::stoi(argv[4]); // 1 represents order-split, 2 represents direct with local search
+    std::string algorithmStr(argv[1]);
+    Algorithm algorithm;
 
+    // Convert algorithm string to enum
+    if (algorithmStr == "baco") {
+        algorithm = Algorithm::BACO;
+    } else if (algorithmStr == "cbaco") {
+        algorithm = Algorithm::CBACO;
+    } else {
+        std::cerr << "Error: Unknown algorithm '" << algorithmStr << "'\n";
+        return 1; // Exit with an error code
+    }
+
+    std::string instanceName(argv[2]);
     std::vector<double> perfOfTrials(MAX_TRIALS);
     std::vector<std::thread> threads;
 
-    // Define a function to perform the threaded work
-    auto thread_function = [&](int run) {
-        Case* instance = new Case(DATA_PATH + instanceName, run);
+    switch (algorithm) {
+        case Algorithm::BACO: {
+            auto thread_function_1 = [&](int run) {
+                Case* instance = new Case(DATA_PATH + instanceName, run);
+                auto* baco = new BACO2(instance, run);
+                baco->run();
 
-        double timer; // the stop criteria of the algorithm max execution time,
-        if (instance->customerNumber <= 100) {
-            timer = 1.0 /100;
-        } else if (instance->customerNumber <= 915) {
-            timer = 2.0 /100;
-        } else {
-            timer = 3.0 /100;
+                perfOfTrials[run - 1] = baco->gbestf;
+
+                delete instance;
+                delete baco;
+            };
+            // Launch threads
+            for (run = 2; run <= MAX_TRIALS; ++run) {
+                threads.emplace_back(thread_function_1, run);
+            }
+            thread_function_1(1);
+
+            // Wait for threads to finish
+            for (auto& thread : threads) {
+                thread.join();
+            }
+            break;
         }
-        double afr = 0.8; // confidence ratio of recharging gammaR, 0.8
 
-        CACO* caco = new CACO(instance, run, isCan, isRA, representation, timer, afr);
-        caco->run();
+        case Algorithm::CBACO: {
+            int isCan = std::stoi(argv[3]); // population initialization, 1 for "buildSolutionFromCandidates", otherwise "buildSolution"
+            int isRA = std::stoi(argv[4]); // weather using confidence-based selection strategy, 1 means yes, 0 means no
+            int representation = std::stoi(argv[5]); // 1 represents order-split, 2 represents direct with local search
 
-        perfOfTrials[run - 1] = caco->bestSolution->fit;
+            auto thread_function_2 = [&](int run) {
+                Case* instance = new Case(DATA_PATH + instanceName, run);
 
-        delete caco;
-        delete instance;
-    };
+                int timer;
+                if (instance->customerNumber <= 100) {
+                    timer = 1 * 36;
+                } else if (instance->customerNumber <= 915) {
+                    timer = 2 * 36;
+                } else {
+                    timer = 3 * 36;
+                }
+                double afr = 0.8; // confidence ratio of recharging gammaR, 0.8
 
-    // Launch threads
-    for (run = 1; run <= MAX_TRIALS; ++run) {
-        threads.emplace_back(thread_function, run);
+                CACO* caco = new CACO(instance, run, isCan, isRA, representation, timer, afr);
+                caco->run();
+
+                perfOfTrials[run - 1] = caco->bestSolution->fit;
+
+                delete caco;
+                delete instance;
+            };
+
+            // Launch threads
+            for (run = 2; run <= MAX_TRIALS; ++run) {
+                threads.emplace_back(thread_function_2, run);
+            }
+            thread_function_2(1);
+
+            // Wait for threads to finish
+            for (auto& thread : threads) {
+                thread.join();
+            }
+            break;
+        }
     }
 
-    // Wait for threads to finish
-    for (auto& thread : threads) {
-        thread.join();
+    string instancePrefix = instanceName.substr(0, instanceName.find_last_of('.'));
+    string directoryPath;
+    if (algorithm == Algorithm::CBACO) {
+        int representation = std::stoi(argv[5]);
+        if (representation == 1) {
+            directoryPath = STATS_PATH + "/" + algorithmStr + "-i" + "/" + instancePrefix; // Use algorithmStr
+        } else {
+            directoryPath = STATS_PATH + "/" + algorithmStr + "-d" + "/" + instancePrefix; // Use algorithmStr
+        }
+    } else {
+        directoryPath = STATS_PATH + "/" + algorithmStr + "/" + instancePrefix;
     }
-
-
-    string instancePredix = instanceName.substr(0, instanceName.find_last_of('.'));
-    string directoryPath = STATS_PATH + "/" + instancePredix;
-    string filepath = directoryPath + "/" + "stats." + instancePredix + ".txt";
-    stats_for_multiple_trials(filepath, perfOfTrials);
+    string filepath = directoryPath + "/" + "stats." + instancePrefix + ".txt";
+    StatsInterface::stats_for_multiple_trials(filepath, perfOfTrials);
 
     return 0;
 }
